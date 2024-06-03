@@ -25,7 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <limits.h>
+#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,21 +46,17 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-TaskHandle_t handler1;
-TaskHandle_t handler2;
-TaskHandle_t handler3;
-SemaphoreHandle_t xSemaphore;
-SemaphoreHandle_t xMutex;
+TaskHandle_t ADCreader_h;
+TaskHandle_t communicationTask_h;
+extern ADC_HandleTypeDef hadc1;
+extern USART_HandleTypeDef husart2;
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
-osMutexId Mutex1Handle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-void Task1Function(void* params);
-void Task2Function(void* params);
-void Task3Function(void* params);
-
+void ADCread(void *params);
+void communicationTask(void *params);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
@@ -75,7 +72,6 @@ void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, Stack
 /* Hook prototypes */
 void configureTimerForRunTimeStats(void);
 unsigned long getRunTimeCounterValue(void);
-void vApplicationIdleHook(void);
 
 /* USER CODE BEGIN 1 */
 /* Functions needed when configGENERATE_RUN_TIME_STATS is on */
@@ -89,19 +85,6 @@ __weak unsigned long getRunTimeCounterValue(void)
 return 0;
 }
 /* USER CODE END 1 */
-
-/* USER CODE BEGIN 2 */
-int counter = 0;
-__weak void vApplicationIdleHook( void )
-{
-	++counter;
-	if(counter > 1000000){
-		LD0_GPIO_Port->ODR ^= (LD0_Pin);
-		counter  = 0;
-	}
-
-}
-/* USER CODE END 2 */
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -138,18 +121,12 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
-  /* Create the mutex(es) */
-  /* definition and creation of Mutex1 */
-  osMutexDef(Mutex1);
-  Mutex1Handle = osMutexCreate(osMutex(Mutex1));
 
   /* USER CODE BEGIN RTOS_MUTEX */
- //xSemaphore = xSemaphoreCreateMutex();
+  /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
- xSemaphore = xSemaphoreCreateBinary();
-
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
@@ -167,17 +144,9 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  if(xSemaphore != NULL){
-	  handler1 = NULL;
-	  xSemaphoreGive(xSemaphore);
-	  xTaskCreate(Task1Function, "Task1", configMINIMAL_STACK_SIZE, NULL, 1, &handler1);
+  xTaskCreate(ADCread, "ADC", configMINIMAL_STACK_SIZE, NULL, 1, &ADCreader_h);
+  xTaskCreate(communicationTask, "communication", configMINIMAL_STACK_SIZE, NULL, 1, &communicationTask_h);
 
-	  xTaskCreate(Task2Function, "Task2", configMINIMAL_STACK_SIZE, NULL, 2, &handler2);
-
-	  xTaskCreate(Task3Function, "Task3", configMINIMAL_STACK_SIZE, NULL, 3, &handler3);
-
-
-	}
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -195,52 +164,71 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  LED3_GPIO_Port->ODR ^= (LED3_Pin);
+	  osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-void Task1Function(void* params){
-	static int counter = 0;
+void ADCread(void *params){
+	uint32_t notified = 0;
+	uint32_t adc_acc = 0;
 	for(;;){
-		if((xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)){
-			for( int i=0; i<10000000; ++i)
+
+		xTaskNotifyWait(
+		                        0x00,               /* Don't clear any bits on entry. */
+		                        ULONG_MAX,          /* Clear all bits on exit. */
+		                        &notified, /* Receives the notification value. */
+		                        portMAX_DELAY );
+		if(notified)
 			{
-				LD1_GPIO_Port->ODR ^= (LD1_Pin);
-				++counter;
+				LED1_GPIO_Port->ODR ^= (LED1_Pin);
+
+				HAL_ADC_Start(&hadc1);
+
+							// Oczekiwanie na zakończenie konwersji
+				HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+
+
+
+				for(int i = 0; i < 10; ++i){
+					adc_acc += HAL_ADC_GetValue(&hadc1);
+				}
+				adc_acc /= 10;
+				xTaskNotify(communicationTask_h, adc_acc, eSetValueWithOverwrite);
+				notified = 0;
+				adc_acc = 0;
+
+				LED1_GPIO_Port->ODR ^= (LED1_Pin);
 			}
-			xSemaphoreGive(xSemaphore);
-		}
-		vTaskDelay(200);
+
+
+		osDelay(100);
 	}
 }
 
-void Task2Function(void* params){
-	static int counter = 0;
+void communicationTask(void *params){
+	uint32_t avg = 0;
+	uint8_t bytes[4];
 	for(;;){
-			for( int i=0; i<10000000; ++i){
-				++counter;
-				LD2_GPIO_Port->ODR ^= (LD2_Pin);
-			}
-			vTaskDelay(600);
-	}
-}
+		xTaskNotifyWait(
+				                        0x00,
+				                        ULONG_MAX,
+				                        &avg,
+				                        portMAX_DELAY );
+		if( avg != 0){
+			LED2_GPIO_Port->ODR ^= (LED2_Pin);
+			bytes[0] = (avg >> 24) & 0xFF;
+			bytes[1] = (avg >> 16) & 0xFF;
+			bytes[2] = (avg >> 8) & 0xFF;
+			bytes[3] = avg & 0xFF;
 
-void Task3Function(void* params){
-	static int counter = 0;
-	for(;;){
-		if((xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)){
-			for( int i=0; i<1000000; ++i)
-			{
-				LD3_GPIO_Port->ODR ^= (LD3_Pin);
-				++counter;
-			}
-			xSemaphoreGive(xSemaphore);
+			HAL_USART_Transmit(&husart2, bytes, 4, HAL_MAX_DELAY);
+			avg = 0;
+			LED2_GPIO_Port->ODR ^= (LED2_Pin);
 		}
-		vTaskDelay(1200);
-	}
+		osDelay(1);}
 }
-
 /* USER CODE END Application */

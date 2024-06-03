@@ -1,7 +1,0 @@
-freertos.c:77:13:vApplicationStackOverflowHook	1
-freertos.c:88:13:vApplicationMallocFailedHook	1
-freertos.c:107:6:vApplicationGetIdleTaskMemory	1
-freertos.c:120:6:vApplicationGetTimerTaskMemory	1
-freertos.c:134:6:MX_FREERTOS_Init	1
-freertos.c:178:6:StartDefaultTask	1
-freertos.c:192:6:vTimerCallback	1

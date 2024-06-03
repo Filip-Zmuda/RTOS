@@ -79,30 +79,26 @@ void Error_Handler(void);
 #define SWO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-#define LED0_ON()		(LED_0_GPIO_Port->BSRR = (LED_0_Pin))
-#define LED0_OFF()		(LED_0_GPIO_Port->BSRR = (LED_0_Pin)<<16)
-#define LED0_TOGGLE()   (LED_0_GPIO_Port->ODR ^= (LED_0_Pin))
-#define LED0_FLASH()	do{LED0_TOGGLE(); LED0_TOGGLE();} while(0)
+#define LD0_ON()		(LD0_GPIO_Port->BSRR = (LD0_Pin))
+#define LD0_OFF()		(LD0_GPIO_Port->BSRR = (LD0_Pin)<<16)
+#define LD0_TOGGLE()   (LD0_GPIO_Port->ODR ^= (LD0_Pin))
+#define LD0_FLASH()	do{LD0_TOGGLE(); LD0_TOGGLE();} while(0)
 
-#define LED1_ON()		(LED_1_GPIO_Port->BSRR = (LED_1_Pin))
-#define LED1_OFF()		(LED_1_GPIO_Port->BSRR = (LED_1_Pin)<<16)
-#define LED1_TOGGLE()   (LED_1_GPIO_Port->ODR ^= (LED_1_Pin))
-#define LED1_FLASH()	do{LED1_TOGGLE(); LED1_TOGGLE();} while(0)
+#define LD1_ON()		(LD1_GPIO_Port->BSRR = (LD1_Pin))
+#define LD1_OFF()		(LD1_GPIO_Port->BSRR = (LD1_Pin)<<16)
+#define LD1_TOGGLE()   (LD1_GPIO_Port->ODR ^= (LD1_Pin))
+#define LD1_FLASH()	do{LD1_TOGGLE(); LD1_TOGGLE();} while(0)
 
-#define LED2_ON()		(LED_2_GPIO_Port->BSRR = (LED_2_Pin))
-#define LED2_OFF()		(LED_2_GPIO_Port->BSRR = (LED_2_Pin)<<16)
-#define LED2_TOGGLE()   (LED_2_GPIO_Port->ODR ^= (LED_2_Pin))
-#define LED2_FLASH()	do{LED2_TOGGLE(); LED2_TOGGLE();} while(0)
+#define LD2_ON()		(LD2_GPIO_Port->BSRR = (LD2_Pin))
+#define LD2_OFF()		(LD2_GPIO_Port->BSRR = (LD2_Pin)<<16)
+#define LD2_TOGGLE()   (LD2_GPIO_Port->ODR ^= (LD2_Pin))
+#define LD2_FLASH()	do{LD2_TOGGLE(); LD2_TOGGLE();} while(0)
 
-#define LED3_ON()		(LED_3_GPIO_Port->BSRR = (LED_3_Pin))
-#define LED3_OFF()		(LED_3_GPIO_Port->BSRR = (LED_3_Pin)<<16)
-#define LED3_TOGGLE()   (LED_3_GPIO_Port->ODR ^= (LED_3_Pin))
-#define LED3_FLASH()	do{LED3_TOGGLE(); LED3_TOGGLE();} while(0)
+#define LD3_ON()		(LD3_GPIO_Port->BSRR = (LD3_Pin))
+#define LD3_OFF()		(LD3_GPIO_Port->BSRR = (LD3_Pin)<<16)
+#define LD3_TOGGLE()   (LD3_GPIO_Port->ODR ^= (LD3_Pin))
+#define LD3_FLASH()	do{LD3_TOGGLE(); LD3_TOGGLE();} while(0)
 
-#define LED4_ON()		(LED_4_GPIO_Port->BSRR = (LED_4_Pin))
-#define LED4_OFF()		(LED_4_GPIO_Port->BSRR = (LED_4_Pin)<<16)
-#define LED4_TOGGLE()   (LED_4_GPIO_Port->ODR ^= (LED_4_Pin))
-#define LED4_FLASH()	do{LED4_TOGGLE(); LED4_TOGGLE();} while(0)
 
 /* USER CODE END Private defines */
 
